@@ -1,0 +1,125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Group Messages</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="{% static 'DASHBOARD/CSS/GroupMessages.css' %}" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid py-4">
+    <div class="row">
+      <div class="col-lg-10 mx-auto">
+        <!-- Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+          <h4 class="fw-bold mb-0"><i class="fas fa-users me-2"></i>Group Messages</h4>
+          <div class="input-group" style="max-width: 300px;">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search groups...">
+            <button id="searchBtn" class="btn btn-primary"><i class="fas fa-search"></i></button>
+          </div>
+        </div>
+        
+        <!-- Main Groups Table -->
+        <div class="group-table mb-4">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Group</th>
+                <th>Members</th>
+                <th>Last Activity</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="groupsTableBody">
+              <!-- Groups will be inserted here by JavaScript -->
+            </tbody>
+          </table>
+          <div id="noGroupsResults" class="no-results d-none">
+            <i class="fas fa-users-slash fa-3x mb-3"></i>
+            <h5>No groups found</h5>
+            <p class="text-muted">Try a different search term</p>
+          </div>
+        </div>
+        
+        <!-- Group Details Panel (Hidden by default) -->
+        <div id="groupDetailsPanel" class="d-none">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Group: <span id="selectedGroupName">Marketing Team</span></h5>
+            <button id="backToGroupsBtn" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-arrow-left me-1"></i> Back to All Groups
+            </button>
+          </div>
+          
+          <div class="group-header mb-3">
+            <div class="row">
+              <div class="col-md-6">
+                <p class="mb-1"><strong>Created:</strong> <span id="groupCreatedDate">Jan 15, 2023</span></p>
+                <p class="mb-1"><strong>Admin:</strong> <span id="groupAdmin">John Doe</span></p>
+              </div>
+              <div class="col-md-6">
+                <p class="mb-1"><strong>Total Messages:</strong> <span id="totalMessages">1,243</span></p>
+                <p class="mb-1"><strong>Last Message:</strong> <span id="lastMessageTime">Today, 14:30</span></p>
+              </div>
+            </div>
+          </div>
+          
+          <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+              <a class="nav-link active" id="members-tab" data-bs-toggle="tab" href="#members">Members</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="messages-tab" data-bs-toggle="tab" href="#messages">Messages</a>
+            </li>
+          </ul>
+          
+          <div class="tab-content">
+            <!-- Members Tab -->
+            <div class="tab-pane fade show active" id="members">
+              <div class="row" id="membersContainer">
+                <!-- Member cards will be inserted here by JavaScript -->
+              </div>
+              <div id="noMembersResults" class="no-results d-none">
+                <i class="fas fa-user-times fa-3x mb-3"></i>
+                <h5>No members found</h5>
+                <p class="text-muted">No group members match your search</p>
+              </div>
+            </div>
+            
+            <!-- Messages Tab -->
+            <div class="tab-pane fade" id="messages">
+              <div class="mb-3">
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Search in messages...">
+                  <button class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+                  <select class="form-select w-auto">
+                    <option>All Messages</option>
+                    <option>Today</option>
+                    <option>Last 7 Days</option>
+                    <option>Reported</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div id="groupMessagesContainer" class="d-flex flex-column gap-3">
+                <!-- Group messages will be inserted here by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Custom JavaScript -->
+  <script src="{% static 'DASHBOARD/JS/GroupMessages.js' %}"></script>
+</body>
+</html>

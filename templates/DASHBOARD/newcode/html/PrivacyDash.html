@@ -1,0 +1,377 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Privacy & Security</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="{% static 'DASHBOARD/CSS/PrivacyDash.css' %}" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid py-4">
+    <div class="row">
+      <div class="col-lg-10 mx-auto">
+        <!-- Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+          <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-lock me-2"></i>Privacy & Security</h4>
+            <p class="text-muted mb-0">Manage admin access, data protection, and security settings</p>
+          </div>
+          <div class="d-flex gap-2">
+            <div class="input-group" style="max-width: 300px;">
+              <input type="text" class="form-control" placeholder="Search settings...">
+              <button class="btn btn-primary"><i class="fas fa-search"></i></button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Privacy Overview Cards -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-6 col-lg-3">
+            <div class="privacy-card security h-100 p-4">
+              <div class="privacy-icon">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <h5>Security Status</h5>
+              <div class="d-flex align-items-center mb-2">
+                <span class="security-badge badge-enabled me-2">Enabled</span>
+                <span>All protections active</span>
+              </div>
+              <p class="text-muted small">2-factor authentication required for all admins</p>
+            </div>
+          </div>
+          
+          <div class="col-md-6 col-lg-3">
+            <div class="privacy-card access h-100 p-4">
+              <div class="privacy-icon">
+                <i class="fas fa-user-lock"></i>
+              </div>
+              <h5>Admin Access</h5>
+              <div class="d-flex align-items-center mb-2">
+                <span class="security-badge badge-enabled me-2">Strict</span>
+                <span>5 active admins</span>
+              </div>
+              <p class="text-muted small">Last login: 2 mins ago from 192.168.1.1</p>
+            </div>
+          </div>
+          
+          <div class="col-md-6 col-lg-3">
+            <div class="privacy-card logs h-100 p-4">
+              <div class="privacy-icon">
+                <i class="fas fa-clipboard-list"></i>
+              </div>
+              <h5>Audit Logs</h5>
+              <div class="d-flex align-items-center mb-2">
+                <span class="security-badge me-2" style="background-color: #e3f2fd; color: #1976d2;">127 entries</span>
+                <span>Today</span>
+              </div>
+              <p class="text-muted small">3 critical actions logged</p>
+            </div>
+          </div>
+          
+          <div class="col-md-6 col-lg-3">
+            <div class="privacy-card data h-100 p-4">
+              <div class="privacy-icon">
+                <i class="fas fa-database"></i>
+              </div>
+              <h5>Data Protection</h5>
+              <div class="d-flex align-items-center mb-2">
+                <span class="security-badge badge-enabled me-2">Encrypted</span>
+                <span>GDPR compliant</span>
+              </div>
+              <p class="text-muted small">Messages encrypted end-to-end</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="row">
+          <!-- Left Column - Security Settings -->
+          <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Security Settings</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-4">
+                  <h6>Authentication</h6>
+                  <div class="table-responsive">
+                    <table class="table privacy-table">
+                      <tbody>
+                        <tr>
+                          <td>2-Factor Authentication</td>
+                          <td>
+                            <label class="toggle-switch">
+                              <input type="checkbox" checked>
+                              <span class="slider"></span>
+                            </label>
+                          </td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Configure</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Password Policy</td>
+                          <td>
+                            <span class="security-badge badge-enabled">Strong</span>
+                          </td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Edit</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Session Timeout</td>
+                          <td>30 minutes</td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Change</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <div class="mb-4">
+                  <h6>IP Restrictions</h6>
+                  <div class="table-responsive">
+                    <table class="table privacy-table">
+                      <tbody>
+                        <tr>
+                          <td>Allowed IP Ranges</td>
+                          <td>3 ranges</td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Manage</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>VPN Detection</td>
+                          <td>
+                            <label class="toggle-switch">
+                              <input type="checkbox">
+                              <span class="slider"></span>
+                            </label>
+                          </td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary">Learn More</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <div>
+                  <h6>Data Access</h6>
+                  <div class="table-responsive">
+                    <table class="table privacy-table">
+                      <tbody>
+                        <tr>
+                          <td>Message Content Access</td>
+                          <td>
+                            <span class="security-badge badge-disabled">Restricted</span>
+                          </td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Permissions</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>User Data Export</td>
+                          <td>
+                            <label class="toggle-switch">
+                              <input type="checkbox" checked>
+                              <span class="slider"></span>
+                            </label>
+                          </td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Settings</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Column - Access Control & Logs -->
+          <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-users-cog me-2"></i>Admin Access Control</h5>
+                <button class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i> Add Admin</button>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table privacy-table">
+                    <thead>
+                      <tr>
+                        <th>Admin</th>
+                        <th>Role</th>
+                        <th>Last Active</th>
+                        <th>Status</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <img src="https://i.pravatar.cc/150?img=5" width="30" height="30" class="rounded-circle">
+                            <span>John Doe</span>
+                          </div>
+                        </td>
+                        <td>Super Admin</td>
+                        <td>2 mins ago</td>
+                        <td><span class="security-badge badge-enabled">Active</span></td>
+                        <td class="text-end">
+                          <button class="btn btn-sm btn-outline-secondary">Edit</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <img src="https://i.pravatar.cc/150?img=11" width="30" height="30" class="rounded-circle">
+                            <span>Jane Smith</td>
+                        <td>Moderator</td>
+                        <td>1 hour ago</td>
+                        <td><span class="security-badge badge-enabled">Active</span></td>
+                        <td class="text-end">
+                          <button class="btn btn-sm btn-outline-secondary">Edit</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <img src="https://i.pravatar.cc/150?img=3" width="30" height="30" class="rounded-circle">
+                            <span>Alex Johnson</span>
+                          </div>
+                        </td>
+                        <td>Analyst</td>
+                        <td>Yesterday</td>
+                        <td><span class="security-badge badge-disabled">Inactive</span></td>
+                        <td class="text-end">
+                          <button class="btn btn-sm btn-outline-secondary">Edit</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <hr class="my-4">
+                
+                <h5 class="mb-3"><i class="fas fa-clipboard-list me-2"></i>Recent Security Events</h5>
+                <div class="audit-log">
+                  <div class="audit-log-item log-critical">
+                    <div class="d-flex justify-content-between">
+                      <strong>Failed login attempt</strong>
+                      <small class="text-muted">2 mins ago</small>
+                    </div>
+                    <p class="mb-1">IP: 192.168.1.100 | Location: Unknown</p>
+                    <small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>3 failed attempts</small>
+                  </div>
+                  
+                  <div class="audit-log-item log-info">
+                    <div class="d-flex justify-content-between">
+                      <strong>Permissions updated</strong>
+                      <small class="text-muted">1 hour ago</small>
+                    </div>
+                    <p class="mb-1">Admin: Jane Smith | Changed role permissions</p>
+                    <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Modified message deletion rights</small>
+                  </div>
+                  
+                  <div class="audit-log-item log-warning">
+                    <div class="d-flex justify-content-between">
+                      <strong>Data export</strong>
+                      <small class="text-muted">3 hours ago</small>
+                    </div>
+                    <p class="mb-1">Admin: Alex Johnson | Exported user reports</p>
+                    <small class="text-warning"><i class="fas fa-exclamation-circle me-1"></i>Large dataset exported</small>
+                  </div>
+                </div>
+                
+                <div class="text-end mt-3">
+                  <button class="btn btn-sm btn-outline-primary">View All Logs</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Data Protection Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="fas fa-database me-2"></i>Data Protection Settings</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-4">
+                  <h6>Data Retention</h6>
+                  <div class="table-responsive">
+                    <table class="table privacy-table">
+                      <tbody>
+                        <tr>
+                          <td>Message Retention</td>
+                          <td>90 days</td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Configure</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Admin Log Retention</td>
+                          <td>1 year</td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Change</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-4">
+                  <h6>Privacy Compliance</h6>
+                  <div class="table-responsive">
+                    <table class="table privacy-table">
+                      <tbody>
+                        <tr>
+                          <td>GDPR Compliance</td>
+                          <td><span class="security-badge badge-enabled">Enabled</span></td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Settings</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>CCPA Compliance</td>
+                          <td><span class="security-badge badge-enabled">Enabled</span></td>
+                          <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary">Settings</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Warning:</strong> Changing data retention settings may affect compliance with privacy regulations.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

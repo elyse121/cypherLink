@@ -160,3 +160,4 @@ class UserProfile(models.Model):
     def generate_verification_token(self):
         """Generate a UUID for verification"""
         return str(uuid.uuid4())
+    # models.py

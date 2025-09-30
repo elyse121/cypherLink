@@ -57,6 +57,22 @@ def logout_page(request):
     messages.success(request, 'You have been logged out successfully.')
     return redirect('/')
 
+# --------------------
+# HELPER
+# --------------------
+def generate_profile_code():
+    return (
+        random.choice(string.ascii_uppercase) +
+        str(random.randint(1, 9)) +
+        '-' +
+        ''.join(random.choices(string.ascii_uppercase + string.digits, k=2)) +
+        '-' +
+        ''.join(random.choices(string.ascii_uppercase + string.digits, k=2))
+    )
+
+# --------------------
+# SIGNUP + VERIFICATION
+# --------------------
 def signup_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -65,35 +81,76 @@ def signup_view(request):
         confirm_password = request.POST.get('confirm_password')
         profile_picture = request.FILES.get('profile_picture')
 
+        # Password check
         if password1 != confirm_password:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "message": "Passwords do not match"})
             messages.error(request, 'Passwords do not match.')
             return render(request, 'signup.html')
 
+        # Email uniqueness check
         if User.objects.filter(email=email).exists():
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "message": "Email is already in use"})
             messages.error(request, 'Email is already in use.')
             return render(request, 'signup.html')
 
+        # Create user + profile
         user = User.objects.create_user(username=username, email=email, password=password1)
         user_profile, created = UserProfile.objects.get_or_create(user=user)
         user_profile.profile_code = generate_profile_code()
+        user_profile.verification_token = user_profile.generate_verification_token()
         if profile_picture:
             user_profile.profile_picture = profile_picture
         user_profile.save()
 
+        # Build verification link
+        verification_link = f"http://127.0.0.1:8000/verify/?token={user_profile.verification_token}"
+
+        # Send email
         send_mail(
-            subject="Your Unique Profile Code",
-            message=f"Hello {username},\n\nYour profile code is: {user_profile.profile_code}\n\nKeep it safe!",
+            subject="Verify Your Best Friends Portal Account",
+            message=(
+                f"Hello {username},\n\n"
+                f"Your profile code is: {user_profile.profile_code}\n\n"
+                f"Please verify your email by clicking this link: {verification_link}\n"
+                f"This link expires in 30 minutes."
+            ),
             from_email="elyseniyonzima202@gmail.com",
             recipient_list=[email],
             fail_silently=False,
         )
 
-        messages.success(request, 'Signup successful! A profile code has been sent to your email.')
+        # Response (Ajax vs normal form)
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({'success': True, 'message': 'Please check your email to verify your account.'})
+
+        messages.success(request, 'Signup successful! Please check your email to verify your account.')
         return redirect('login')
 
     if request.user.is_authenticated:
         return redirect('posts')
     return render(request, 'signup.html')
+
+
+def verify_email(request):
+    """Handle email verification"""
+    token = request.GET.get('token')
+    if not token:
+        messages.error(request, 'Invalid verification link.')
+        return render(request, 'verify.html')
+
+    try:
+        user_profile = UserProfile.objects.get(verification_token=token, is_verified=False)
+        user_profile.is_verified = True
+        user_profile.verification_token = None  # expire token
+        user_profile.save()
+        messages.success(request, 'Email verified! You can now log in.')
+        return render(request, 'verify.html')
+    except UserProfile.DoesNotExist:
+        messages.error(request, 'Invalid or expired verification link.')
+        return render(request, 'verify.html')
+
 
 @login_required
 def home_page(request):
@@ -326,48 +383,7 @@ def generate_profile_code():
         ''.join(random.choices(string.ascii_uppercase + string.digits, k=2))
     )
 
-# Modified signup view
-def signup_view(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        username = request.POST.get('username')
-        password1 = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-        profile_picture = request.FILES.get('profile_picture')
 
-        if password1 != confirm_password:
-            messages.error(request, 'Passwords do not match.')
-            return render(request, 'signup.html')
-
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email is already in use.')
-            return render(request, 'signup.html')
-
-        # Create user and profile
-        user = User.objects.create_user(username=username, email=email, password=password1)
-        user_profile, created = UserProfile.objects.get_or_create(user=user)
-        user_profile.profile_code = generate_profile_code()
-        user_profile.verification_token = user_profile.generate_verification_token()
-        if profile_picture:
-            user_profile.profile_picture = profile_picture
-        user_profile.save()
-
-        # Send email with profile code and verification link
-        verification_link = f"http://127.0.0.1:8000/verify/?token={user_profile.verification_token}"
-        send_mail(
-            subject="Verify Your Best Friends Portal Account",
-            message=f"Hello {username},\n\nYour profile code is: {user_profile.profile_code}\n\nPlease verify your email by clicking this link: {verification_link}\n\nThis link expires in 30 minutes.",
-            from_email="elyseniyonzima202@gmail.com",
-            recipient_list=[email],
-            fail_silently=False,
-        )
-
-        # Return JSON for AJAX to show "waiting" state
-        return JsonResponse({'success': True, 'message': 'Please check your email to verify your account.'})
-
-    if request.user.is_authenticated:
-        return redirect('posts')
-    return render(request, 'signup.html')
 
 # New view for email verification
 def verify_email(request):
@@ -409,3 +425,239 @@ def login_page(request):
 
 # ... (rest of your views.py remains unchanged)
 
+import requests  # Add this at the top of your file
+
+@login_required
+@require_POST
+def unlock_archived_messages(request, chat_room_id):
+    """
+    Verify user's profile code and allow access to archived messages.
+    If the code is wrong, email the account owner with intruder info including country and region.
+    """
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        entered_code = data.get("profile_code", "").strip()
+
+        if not entered_code:
+            return JsonResponse({"success": False, "error": "Profile code is required."})
+
+        # Get current user's profile
+        user_profile = UserProfile.objects.get(user=request.user)
+
+        if user_profile.profile_code != entered_code:
+            # --- Collect intruder info ---
+            ip = request.META.get('REMOTE_ADDR', 'Unknown IP')
+            user_agent = request.META.get('HTTP_USER_AGENT', 'Unknown UA')
+            referer = request.META.get('HTTP_REFERER', 'Unknown referer')
+            accept_lang = request.META.get('HTTP_ACCEPT_LANGUAGE', 'Unknown language')
+            attempt_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+            page = request.path
+
+            # --- Get country and region from IP ---
+            try:
+                response = requests.get(f'https://ipinfo.io/{ip}/json')
+                geo_data = response.json()
+                country = geo_data.get('country', 'Unknown')
+                region = geo_data.get('region', 'Unknown')
+                city = geo_data.get('city', 'Unknown')
+                org = geo_data.get('org', 'Unknown')  # ISP / Org info
+            except:
+                country = region = city = org = 'Unknown'
+
+            # --- Send email to account owner ---
+            account_owner_email = request.user.email
+            subject = "⚠️ Intruder Alert: Wrong Profile Code Attempt"
+            text_content = (
+                f"A wrong profile code was entered on your account!\n\n"
+                f"Username: {request.user.username}\n"
+                f"IP Address: {ip}\n"
+                f"Country: {country}\n"
+                f"Region: {region}\n"
+                f"City: {city}\n"
+                f"ISP / Org: {org}\n"
+                f"Browser / Device: {user_agent}\n"
+                f"Page: {page}\n"
+                f"Referer: {referer}\n"
+                f"Language: {accept_lang}\n"
+                f"Time: {attempt_time}\n"
+                f"Entered Code: {entered_code}\n\n"
+                f"If this wasn't you, please secure your account immediately."
+            )
+            html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }}
+        .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: linear-gradient(to right, #d32f2f, #b71c1c);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }}
+        .alert-icon {{
+            font-size: 40px;
+            margin-bottom: 10px;
+        }}
+        .content {{
+            padding: 25px;
+        }}
+        .info-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }}
+        .info-item {{
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            border-left: 3px solid #d32f2f;
+        }}
+        .label {{
+            font-weight: bold;
+            color: #d32f2f;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }}
+        .warning {{
+            background: #ffebee;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border: 1px solid #ffcdd2;
+        }}
+        .footer {{
+            background: #f5f5f5;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }}
+        @media (max-width: 480px) {{
+            .info-grid {{
+                grid-template-columns: 1fr;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="alert-icon">⚠️</div>
+            <h1>Security Alert: Unauthorized Access Attempt</h1>
+        </div>
+        
+        <div class="content">
+            <p>We detected an attempt to access your account using an incorrect profile code.</p>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="label">Username</div>
+                    <div>{request.user.username}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">IP Address</div>
+                    <div>{ip}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Location</div>
+                    <div>{city}, {region}, {country}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">ISP/Organization</div>
+                    <div>{org}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Time of Attempt</div>
+                    <div>{attempt_time}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Entered Code</div>
+                    <div>{entered_code}</div>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <div class="label">Browser/Device</div>
+                    <div>{user_agent}</div>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <div class="label">Page Accessed</div>
+                    <div>{page}</div>
+                </div>
+            </div>
+            
+            <div class="warning">
+                <h3 style="margin-top: 0; color: #d32f2f;">Immediate Action Recommended</h3>
+                <p>If you did not attempt to access your account, please take the following steps immediately:</p>
+                <ol>
+                    <li>Change your password</li>
+                    <li>Review your account activity</li>
+                    <li>Enable two-factor authentication if available</li>
+                    <li>Contact support if you need assistance</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated security alert. Please do not reply to this message.</p>
+            <p>© {timezone.now().year} Your Company Name. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+            from django.core.mail import EmailMultiAlternatives
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email="elyseniyonzima202@gmail.com",
+                to=[account_owner_email],
+            )
+            email.attach_alternative(html_content, "text/html")
+            email.send(fail_silently=False)
+
+            return JsonResponse({"success": False, "error": "Invalid profile code."})
+
+        # Correct code: unlock messages
+        request.session[f"unlocked_{chat_room_id}"] = True
+        return JsonResponse({"success": True, "message": "Archived messages unlocked."})
+
+    except UserProfile.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Profile not found."})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+@login_required
+def fetch_messages(request, chat_room_id):
+    # get messages for this chat room (example, adapt to your model)
+    messages_qs = Message.objects.filter(chat_room_id=chat_room_id).order_by("timestamp")
+    unlocked = request.session.get(f"unlocked_{chat_room_id}", False)
+
+    messages_data = []
+    for msg in messages_qs:
+        messages_data.append({
+            "id": msg.id,
+            "sender": msg.sender.username,
+            "sender_id": msg.sender.id,
+            "content": msg.content if unlocked else "[Archived Content]",
+            "timestamp": msg.timestamp.isoformat(),
+        })
+
+    return JsonResponse({"success": True, "messages": messages_data})

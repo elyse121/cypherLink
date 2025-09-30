@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Dark Messages</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="{% static 'DASHBOARD/CSS/DarkMessages.css' %}" rel="stylesheet">
+  <style>
+
+  </style>
+</head>
+<body>
+  <div class="container-fluid py-4">
+    <div class="row">
+      <div class="col-lg-11 col-xl-10 mx-auto">
+        <!-- Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+          <div>
+            <h4 class="fw-bold mb-1"><i class="fas fa-door-closed me-2"></i>Dark Messages</h4>
+            <p class="text-muted mb-0">Monitor token-protected private conversations</p>
+          </div>
+          <div class="d-flex gap-2">
+            <div class="input-group" style="width: 250px;">
+              <input type="text" id="searchInput" class="form-control" placeholder="Search tokens or users...">
+              <button class="btn btn-outline-secondary" id="searchBtn"><i class="fas fa-search"></i></button>
+            </div>
+            <select class="form-select" id="timeFilter" style="width: auto;">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="row">
+          <!-- Dark Rooms Table -->
+          <div class="col-lg-8">
+            <div class="darkroom-card mb-4">
+              <div class="darkroom-header">
+                <h5 class="mb-0">Active Dark Rooms</h5>
+              </div>
+              <div class="tab-content">
+                <div class="table-responsive">
+                  <table class="table darkroom-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Token ID</th>
+                        <th>Participants</th>
+                        <th>Created</th>
+                        <th>Last Activity</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="darkRoomsTable">
+                      <!-- Rows will be populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+                
+                <nav class="mt-3">
+                  <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                      <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                      <a class="page-link" href="#">Next</a>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Statistics Panel -->
+          <div class="col-lg-4">
+            <div class="darkroom-card mb-4">
+              <div class="darkroom-header">
+                <h5 class="mb-0">Dark Room Analytics</h5>
+              </div>
+              <div class="tab-content">
+                <div class="mb-4">
+                  <h6>Today's Activity</h6>
+                  <div class="d-flex justify-content-between mb-3">
+                    <div>
+                      <h3 class="mb-0" id="newRoomsCount">12</h3>
+                      <small class="text-muted">New Rooms</small>
+                    </div>
+                    <div>
+                      <h3 class="mb-0" id="messagesCount">47</h3>
+                      <small class="text-muted">Messages</small>
+                    </div>
+                    <div>
+                      <h3 class="mb-0" id="activeRoomsCount">8</h3>
+                      <small class="text-muted">Active Now</small>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mb-4">
+                  <h6>Top Participants</h6>
+                  <div class="list-group" id="topParticipants">
+                    <!-- Will be populated by JavaScript -->
+                  </div>
+                </div>
+                
+                <div>
+                  <h6>Token Activity</h6>
+                  <div class="bg-light p-3 rounded">
+                    <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: #6c757d;">
+                      [Token usage chart]
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Custom JavaScript -->
+  <script src="{% static 'DASHBOARD/JS/DarkMessages.js' %}"></script>
+</body>
+</html>
