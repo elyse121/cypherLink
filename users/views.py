@@ -6,7 +6,6 @@ from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.core.mail import send_mail
 from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
@@ -14,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 import random
 import string
 import json
+import requests
 
 from .models import Post, Like, Comment, UserProfile, Memory, TunnelSession, TunnelOTP
 
@@ -58,20 +58,7 @@ def logout_page(request):
     return redirect('/')
 
 # --------------------
-# HELPER
-# --------------------
-def generate_profile_code():
-    return (
-        random.choice(string.ascii_uppercase) +
-        str(random.randint(1, 9)) +
-        '-' +
-        ''.join(random.choices(string.ascii_uppercase + string.digits, k=2)) +
-        '-' +
-        ''.join(random.choices(string.ascii_uppercase + string.digits, k=2))
-    )
-
-# --------------------
-# SIGNUP + VERIFICATION
+# SIGNUP (NO EMAIL VERIFICATION)
 # --------------------
 def signup_view(request):
     if request.method == 'POST':
@@ -95,62 +82,38 @@ def signup_view(request):
             messages.error(request, 'Email is already in use.')
             return render(request, 'signup.html')
 
+        # Username uniqueness check
+        if User.objects.filter(username=username).exists():
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "message": "Username is already taken"})
+            messages.error(request, 'Username is already taken.')
+            return render(request, 'signup.html')
+
         # Create user + profile
         user = User.objects.create_user(username=username, email=email, password=password1)
         user_profile, created = UserProfile.objects.get_or_create(user=user)
         user_profile.profile_code = generate_profile_code()
-        user_profile.verification_token = user_profile.generate_verification_token()
+        user_profile.is_verified = True  # Auto-verify since no email verification
+        user_profile.verification_token = None  # No verification token needed
         if profile_picture:
             user_profile.profile_picture = profile_picture
         user_profile.save()
 
-        # Build verification link
-        verification_link = f"http://127.0.0.1:8000/verify/?token={user_profile.verification_token}"
-
-        # Send email
-        send_mail(
-            subject="Verify Your Best Friends Portal Account",
-            message=(
-                f"Hello {username},\n\n"
-                f"Your profile code is: {user_profile.profile_code}\n\n"
-                f"Please verify your email by clicking this link: {verification_link}\n"
-                f"This link expires in 30 minutes."
-            ),
-            from_email="elyseniyonzima202@gmail.com",
-            recipient_list=[email],
-            fail_silently=False,
-        )
+        # Auto-login after signup
+        user = authenticate(request, username=username, password=password1)
+        if user:
+            login(request, user)
 
         # Response (Ajax vs normal form)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({'success': True, 'message': 'Please check your email to verify your account.'})
+            return JsonResponse({'success': True, 'message': 'Account created successfully!', 'redirect': '/posts/'})
 
-        messages.success(request, 'Signup successful! Please check your email to verify your account.')
-        return redirect('login')
+        messages.success(request, 'Account created successfully!')
+        return redirect('posts')
 
     if request.user.is_authenticated:
         return redirect('posts')
     return render(request, 'signup.html')
-
-
-def verify_email(request):
-    """Handle email verification"""
-    token = request.GET.get('token')
-    if not token:
-        messages.error(request, 'Invalid verification link.')
-        return render(request, 'verify.html')
-
-    try:
-        user_profile = UserProfile.objects.get(verification_token=token, is_verified=False)
-        user_profile.is_verified = True
-        user_profile.verification_token = None  # expire token
-        user_profile.save()
-        messages.success(request, 'Email verified! You can now log in.')
-        return render(request, 'verify.html')
-    except UserProfile.DoesNotExist:
-        messages.error(request, 'Invalid or expired verification link.')
-        return render(request, 'verify.html')
-
 
 @login_required
 def home_page(request):
@@ -279,6 +242,8 @@ def initiate_tunnel(request):
 
         otp = TunnelOTP.objects.create(tunnel_session=tunnel)
 
+        # Send OTP email (optional - you can remove this if you don't want OTP emails)
+        from django.core.mail import send_mail
         send_mail(
             subject="Private Tunnel Access Code",
             message=f"Hello {recipient.username},\n{request.user.username} wants to chat with you.\nOTP: {otp.otp_code}\nValid for 5 minutes.",
@@ -329,7 +294,6 @@ def verify_tunnel_otp(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-
 @login_required
 def tunnel_chat(request, chat_room_id):
     """Render the private chat room"""
@@ -344,7 +308,6 @@ def tunnel_chat(request, chat_room_id):
 
         other_user = tunnel_session.recipient if tunnel_session.initiator == request.user else tunnel_session.initiator
 
-        # Use your existing template name
         return render(request, 'tunner_chat.html', {
             'chat_room_id': chat_room_id,
             'other_user': other_user,
@@ -354,79 +317,9 @@ def tunnel_chat(request, chat_room_id):
     except TunnelSession.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Tunnel not found or inactive'})
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
-from django.core.files.storage import FileSystemStorage
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.core.mail import send_mail
-from django.utils import timezone
-from datetime import timedelta
-from django.views.decorators.csrf import csrf_exempt
-import random
-import string
-import json
-
-from .models import Post, Like, Comment, UserProfile, Memory, TunnelSession, TunnelOTP
-
-# Helper function (already in your code)
-def generate_profile_code():
-    return (
-        random.choice(string.ascii_uppercase) +
-        str(random.randint(1, 9)) +
-        '-' +
-        ''.join(random.choices(string.ascii_uppercase + string.digits, k=2)) +
-        '-' +
-        ''.join(random.choices(string.ascii_uppercase + string.digits, k=2))
-    )
-
-
-
-# New view for email verification
-def verify_email(request):
-    token = request.GET.get('token')
-    if not token:
-        messages.error(request, 'Invalid verification link.')
-        return render(request, 'verify.html')
-
-    try:
-        user_profile = UserProfile.objects.get(verification_token=token, is_verified=False)
-        user_profile.is_verified = True
-        user_profile.verification_token = None  # Clear token after use
-        user_profile.save()
-        messages.success(request, 'Email verified! You can now log in.')
-        return render(request, 'verify.html')
-    except UserProfile.DoesNotExist:
-        messages.error(request, 'Invalid or expired verification link.')
-        return render(request, 'verify.html')
-
-# Modified login view to check verification
-def login_page(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        if user:
-            user_profile = UserProfile.objects.get(user=user)
-            if not user_profile.is_verified:
-                messages.error(request, 'Please verify your email before logging in.')
-                return render(request, 'login.html')
-            login(request, user)
-            messages.success(request, 'Login successful!')
-            return redirect('posts')
-        else:
-            messages.error(request, 'Invalid username or password.')
-    if request.user.is_authenticated:
-        return redirect('posts')
-    return render(request, 'login.html')
-
-# ... (rest of your views.py remains unchanged)
-
-import requests  # Add this at the top of your file
-
+# --------------------
+# ARCHIVED MESSAGES SECURITY
+# --------------------
 @login_required
 @require_POST
 def unlock_archived_messages(request, chat_room_id):
@@ -646,18 +539,23 @@ def unlock_archived_messages(request, chat_room_id):
 
 @login_required
 def fetch_messages(request, chat_room_id):
-    # get messages for this chat room (example, adapt to your model)
-    messages_qs = Message.objects.filter(chat_room_id=chat_room_id).order_by("timestamp")
+    # This is a placeholder - you'll need to implement your actual Message model
+    # get messages for this chat room
     unlocked = request.session.get(f"unlocked_{chat_room_id}", False)
-
-    messages_data = []
-    for msg in messages_qs:
-        messages_data.append({
-            "id": msg.id,
-            "sender": msg.sender.username,
-            "sender_id": msg.sender.id,
-            "content": msg.content if unlocked else "[Archived Content]",
-            "timestamp": msg.timestamp.isoformat(),
-        })
-
-    return JsonResponse({"success": True, "messages": messages_data})
+    
+    # Example implementation - replace with your actual Message model
+    try:
+        from .models import Message  # Import your actual Message model
+        messages_qs = Message.objects.filter(chat_room_id=chat_room_id).order_by("timestamp")
+        messages_data = []
+        for msg in messages_qs:
+            messages_data.append({
+                "id": msg.id,
+                "sender": msg.sender.username,
+                "sender_id": msg.sender.id,
+                "content": msg.content if unlocked else "[Archived Content]",
+                "timestamp": msg.timestamp.isoformat(),
+            })
+        return JsonResponse({"success": True, "messages": messages_data})
+    except:
+        return JsonResponse({"success": False, "error": "Message model not implemented"})
